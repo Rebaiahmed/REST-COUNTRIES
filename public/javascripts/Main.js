@@ -1,6 +1,6 @@
 
 
-angular.module('RestAPI',['720kb.socialshare','ngSocial','ui.router'])
+angular.module('RestAPI',['720kb.socialshare','ngSocial','ui.router','angular-loading-bar','ngAnimate'])
 
     .config(function($stateProvider, $urlRouterProvider) {
 
@@ -9,6 +9,12 @@ angular.module('RestAPI',['720kb.socialshare','ngSocial','ui.router'])
         $stateProvider
 
 
+            .state('countries', {
+                url: '/',
+                templateUrl: 'partials/index.html',
+                controller :'RestCtrl',
+
+            })
 
             .state('country', {
                 url: '/country',
@@ -19,6 +25,12 @@ angular.module('RestAPI',['720kb.socialshare','ngSocial','ui.router'])
                 }
             })
 
+        $urlRouterProvider.otherwise('/');
+
+    })
+
+    .config(function(cfpLoadingBarProvider) {
+        cfpLoadingBarProvider.includeSpinner = true;
     })
 
 
@@ -34,7 +46,7 @@ angular.module('RestAPI',['720kb.socialshare','ngSocial','ui.router'])
 
 
 
-.service('RestService',['$http','$q', function($http,$q){
+.service('RestService',['$http','$q','cfpLoadingBar', function($http,$q,cfpLoadingBar){
 
         /*
         method1 to get all countries
@@ -59,66 +71,29 @@ angular.module('RestAPI',['720kb.socialshare','ngSocial','ui.router'])
         }
 
         this.getCountriesByName = function(name){
-            return $http.get('https://restcountries.eu/rest/v1/name/' + name);
+            var deffered = $q.defer();
+            $http.get('https://restcountries.eu/rest/v1/name/' + name)
+                .then(function(data){
+var country ={};
+                    country =data.data[0];
+
+                    deffered.resolve(country);
+                }).catch(function(err){
+
+                    deffered.reject();
+                })
+
+            return  deffered.promise;
 
         }
 
 
 
     }])
-   .controller('RestCtrl',['RestService','$http','$state','$scope', function(RestService,$http,$state,$scope){
+   .controller('RestCtrl',['RestService','$http','$state','$scope','cfpLoadingBar','$timeout', function(RestService,$http,$state,$scope,cfpLoadingBar
+    ,$timeout){
 
 
-        function getAllCountries(){
-
-
-
-        }
-
-
-
-        $http.get('https://restcountries.eu/rest/v1/all').then(function(data){
-
-        }).catch(function(err){
-            console.log('err' + err);
-        })
-
-
-        getAllCountries()
-
-        /*
-
-         */
-        function getCountriesByRegion(region){
-            RestService.getCountriesByRegion(region)
-                .then(function(data){
-
-                }).catch(function(err){
-
-                })
-        }
-
-
-
-        function getCountriesBylanguage(language){
-            RestService.getCountriesBylanguage(language)
-                .then(function(data){
-
-                }).catch(function(err){
-
-                })
-        }
-
-
-
-        function getCountriesByName(name){
-            RestService.getCountriesByName(name)
-                .then(function(data){
-
-                }).catch(function(err){
-
-                })
-        }
 
 
 
@@ -150,10 +125,6 @@ $scope.show = true;
             },
             done: function(datamap) {
                 datamap.svg.selectAll('.datamaps-subunit').on('click', function(geography) {
-                    alert(geography.properties.name);
-
-
-                    console.log('georgrapgy' + geography);
                     $scope.show = false;
                     $state.go('country',{country:geography});
 
@@ -176,6 +147,23 @@ $scope.show = true;
         }, 2000);
 
 
+        $scope.start = function() {
+            cfpLoadingBar.start();
+        };
+
+        $scope.complete = function () {
+            cfpLoadingBar.complete();
+        }
+
+
+        // fake the initial load so first time users can see it right away:
+        $scope.start();
+        $scope.fakeIntro = true;
+        $timeout(function() {
+            $scope.complete();
+            $scope.fakeIntro = false;
+        }, 750);
+
 
     }])
 
@@ -186,7 +174,8 @@ $scope.show = true;
 
  */
 
-    .controller('CountryCtrl',['RestService','$http','$state','$scope','$stateParams', function(RestService,$http,$state,$scope,$stateParams){
+    .controller('CountryCtrl',['RestService','$http','$state','$scope','$stateParams','cfpLoadingBar','$timeout', function(RestService,$http,$state,$scope,$stateParams
+    ,cfpLoadingBar,$timeout){
 
 
 $scope.country ={};
@@ -198,15 +187,13 @@ $scope.country ={};
         var res = name.substring(0,2);
          $scope.name_flag = res.toLowerCase();
 
-
-
-        console.log($scope.name_flag );
-
         function getCountriesByName(name){
             RestService.getCountriesByName(name)
                 .then(function(data){
 
-                    $scope.country=data.data;
+                   $scope.country=data;
+
+
                 }).catch(function(err){
                     console.log('err' + JSON.stringify(err));
 
@@ -217,5 +204,21 @@ $scope.country ={};
         getCountriesByName(name);
 
 
+        $scope.start = function() {
+            cfpLoadingBar.start();
+        };
+
+        $scope.complete = function () {
+            cfpLoadingBar.complete();
+        }
+
+
+        // fake the initial load so first time users can see it right away:
+        $scope.start();
+        $scope.fakeIntro = true;
+        $timeout(function() {
+            $scope.complete();
+            $scope.fakeIntro = false;
+        }, 750);
 
     }])
