@@ -23,7 +23,7 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use('/', routes);
-app.use('/users', users);
+
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -55,6 +55,21 @@ app.use(function(err, req, res, next) {
     error: {}
   });
 });
+
+
+
+
+
+
+
+
+
+app.listen(3000, function(){
+  console.log('server running in port 3000!')
+})
+
+
+
 
 
 module.exports = app;
